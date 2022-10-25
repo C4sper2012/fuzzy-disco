@@ -1,8 +1,7 @@
-/* Simpel demo af OLED LCD Display med I2C */
 #include <SPI.h> // SPI Library
 #include <Wire.h> // I2C Library
 #include <Adafruit_GFX.h> // Adafruit OLED Display
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_SSD1306.h> // Adafruit OLED Display
 #include "RTClib.h"
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
@@ -50,6 +49,7 @@ void loop()
 	display.setTextSize(3); // Normal 1:1 pixel scale
 	display.setTextColor(WHITE); // Draw white text
 	display.setCursor(0,0); // Start at top-left corner
+
   DateTime now = rtc.now();
 	display.println(daysOfTheWeek[now.dayOfTheWeek()]);
 	display.print(now.hour());
