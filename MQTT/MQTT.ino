@@ -31,6 +31,13 @@ void connect() {
 
 void messageReceived(String &topic, String &payload) {
   Serial.println("incoming: " + topic + " - " + payload);
+  if (payload == "on")
+  {
+    digitalWrite(LED_BUILTIN, 1);
+  }
+  else if (payload == "off") {
+    digitalWrite(LED_BUILTIN, 0);
+  }
 
   // Note: Do not use the client in the callback to publish, subscribe or
   // unsubscribe as it may cause deadlocks when other things arrive while
@@ -46,7 +53,7 @@ void setup() {
   // by Arduino. You need to set the IP address directly.
   client.begin("mangosting.cloud.shiftr.io", net);
   client.onMessage(messageReceived);
-
+  pinMode(LED_BUILTIN, HIGH);
   connect();
 }
 
