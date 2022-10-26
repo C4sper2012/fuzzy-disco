@@ -2,11 +2,15 @@
 #include <WiFiNINA.h>
 #include <MQTT.h>
 #include <DHT.h>
-#include <Wire.h> // I2C Library
-
+#include <Wire.h>  // I2C Library
+#include <utility/wifi_drv.h>
 
 #define DHTTYPE DHT11
 #define DHTPIN 2
+#define GREEN 25
+#define RED 26
+#define BLUE 27
+
 
 
 const char ssid[] = "SibirienAP";
@@ -20,8 +24,10 @@ DHT dht(DHTPIN, DHTTYPE);
 void connect() {
   Serial.print("checking wifi...");
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(1000);
+    WiFiDrv::analogWrite(RED, 255);  //
+    WiFiDrv::analogWrite(GREEN, 0);
+    WiFiDrv::analogWrite(BLUE, 0);
+    delay(250);
   }
 
   Serial.print("\nconnecting...");
@@ -29,7 +35,9 @@ void connect() {
     Serial.print(".");
     delay(1000);
   }
-
+  WiFiDrv::analogWrite(RED, 0);  //
+  WiFiDrv::analogWrite(GREEN, 255);
+  WiFiDrv::analogWrite(BLUE, 0);
   Serial.println("\nconnected!");
 
   //client.subscribe("/hello");
@@ -38,11 +46,9 @@ void connect() {
 
 void messageReceived(String &topic, String &payload) {
   Serial.println("incoming: " + topic + " - " + payload);
-  if (payload == "on")
-  {
+  if (payload == "on") {
     digitalWrite(LED_BUILTIN, 1);
-  }
-  else if (payload == "off") {
+  } else if (payload == "off") {
     digitalWrite(LED_BUILTIN, 0);
   }
 
@@ -54,6 +60,10 @@ void messageReceived(String &topic, String &payload) {
 
 void setup() {
   Serial.begin(115200);
+
+  WiFiDrv::pinMode(25, OUTPUT);  //define green pin
+  WiFiDrv::pinMode(26, OUTPUT);  //define red pin
+  WiFiDrv::pinMode(27, OUTPUT);  //define blue pin
 
   pinMode(LED_BUILTIN, HIGH);
   dht.begin();
@@ -74,7 +84,18 @@ void loop() {
 
   // publish a message roughly every second.
   if (millis() - lastMillis > 1000) {
+    WiFiDrv::analogWrite(RED, 255); // 
+    WiFiDrv::analogWrite(GREEN, 255);
+    WiFiDrv::analogWrite(BLUE, 0);
+    delay(500);
+    WiFiDrv::analogWrite(RED, 0); // 
+    WiFiDrv::analogWrite(GREEN, 255);
+    WiFiDrv::analogWrite(BLUE, 0);
     lastMillis = millis();
-    client.publish("DHT11", String(dht.readTemperature()));
+    String temp = "Temperature: ";
+    temp.concat(dht.readTemperature());
+    temp.concat("\nHumidity: ");
+    temp.concat(dht.readHumidity());
+    client.publish("DHT11", temp);
   }
 }
