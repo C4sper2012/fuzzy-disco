@@ -4,13 +4,19 @@
 #include <DHT.h>
 #include <Wire.h>  // I2C Library
 #include <utility/wifi_drv.h>
+#include <Adafruit_GFX.h> // Adafruit OLED Display
+#include <Adafruit_SSD1306.h> // Adafruit OLED Display
 
 #define DHTTYPE DHT11
 #define DHTPIN 2
+
 #define GREEN 25
 #define RED 26
 #define BLUE 27
 
+#define OLED_RESET 4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 
 const char ssid[] = "SibirienAP";
@@ -20,6 +26,7 @@ unsigned long lastMillis = 0;
 WiFiClient net;
 MQTTClient client;
 DHT dht(DHTPIN, DHTTYPE);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void connect() {
   Serial.print("checking wifi...");
@@ -31,7 +38,7 @@ void connect() {
   }
 
   Serial.print("\nconnecting...");
-  while (!client.connect("arduino", "mangosting", "CXzamZsmmy1iSedX")) {
+  while (!client.connect("MBgwJDQlBy0SHiAlFDY4JBk", "MBgwJDQlBy0SHiAlFDY4JBk", "cNERyk5wAiYNbzI/qA82Luu7")) {
     Serial.print(".");
     delay(1000);
   }
@@ -66,10 +73,17 @@ void setup() {
   WiFiDrv::pinMode(27, OUTPUT);  //define blue pin
 
   pinMode(LED_BUILTIN, HIGH);
+
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) 
+	{ // Address for 128x64
+		Serial.println(F("SSD1306 allocation failed"));
+		for(;;); // Don't proceed, loop forever
+	}
+
   dht.begin();
   WiFi.begin(ssid, pass);
 
-  client.begin("mangosting.cloud.shiftr.io", net);
+  client.begin("mqtt3.thingspeak.com", net);
   client.onMessage(messageReceived);
 
   connect();
@@ -83,19 +97,19 @@ void loop() {
   }
 
   // publish a message roughly every second.
-  if (millis() - lastMillis > 1000) {
-    WiFiDrv::analogWrite(RED, 255); // 
-    WiFiDrv::analogWrite(GREEN, 255);
-    WiFiDrv::analogWrite(BLUE, 0);
-    delay(500);
-    WiFiDrv::analogWrite(RED, 0); // 
-    WiFiDrv::analogWrite(GREEN, 255);
-    WiFiDrv::analogWrite(BLUE, 0);
+  if (millis() - lastMillis > 30000) {
     lastMillis = millis();
-    String temp = "Temperature: ";
-    temp.concat(dht.readTemperature());
-    temp.concat("\nHumidity: ");
-    temp.concat(dht.readHumidity());
-    client.publish("DHT11", temp);
+    String query = "field1= ";
+    query.concat(dht.readTemperature());
+    query.concat("&field2=");
+    query.concat(dht.readHumidity());
+    Serial.println(query);
+    display.clearDisplay();
+    display.setTextSize(1); // Normal 1:1 pixel scale
+    display.setTextColor(WHITE); // Draw white text
+    display.setCursor(0,0); // Start at top-left corner
+    display.println(query);
+    display.display();
+    client.publish("channels/1910486/publish", query);
   }
 }
